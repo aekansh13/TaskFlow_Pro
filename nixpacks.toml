@@ -1,9 +1,0 @@
-# Tells Railway how to build specifically from the backend folder
-[phases.setup]
-nixPkgs = ["python311"]
-
-[phases.install]
-cmds = ["pip install -r backend/requirements.txt"]
-
-[start]
-cmd = "gunicorn --worker-class eventlet -w 1 --chdir backend run:app"
