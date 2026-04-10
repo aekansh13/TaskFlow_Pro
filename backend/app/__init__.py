@@ -19,13 +19,11 @@ def create_app(config_name: str = 'development') -> Flask:
     mongoengine.connect(host=app.config['MONGODB_SETTINGS']['host'])
 
     # Register Flask extensions
-    frontend_url = app.config.get('FRONTEND_URL', '*')
-    
     jwt.init_app(app)
     cors.init_app(
         app,
         resources={r'/api/*': {
-            'origins': [frontend_url, 'http://localhost:5500', 'http://127.0.0.1:5500'],
+            'origins': '*',
             'methods': ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
             'allow_headers': ['Content-Type', 'Authorization', 'X-Requested-With'],
             'expose_headers': ['Content-Type', 'Set-Cookie'],
@@ -36,7 +34,7 @@ def create_app(config_name: str = 'development') -> Flask:
     )
     socketio.init_app(
         app,
-        cors_allowed_origins=[frontend_url, 'http://localhost:5500', 'http://127.0.0.1:5500'],
+        cors_allowed_origins='*',
         async_mode=None
     )
 

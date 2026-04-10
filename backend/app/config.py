@@ -6,7 +6,6 @@ class Config:
     """Base configuration class."""
     SECRET_KEY = os.environ.get('SECRET_KEY', 'change-me-in-production')
     MONGODB_SETTINGS = {'host': os.environ.get('MONGO_URI', 'mongodb://localhost:27017/taskflow')}
-    FRONTEND_URL = os.environ.get('FRONTEND_URL', '*')
 
     # JWT
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'jwt-secret-change-me')
@@ -39,8 +38,7 @@ class ProductionConfig(Config):
     """Production configuration — debug off, cookies must be HTTPS."""
     DEBUG = False
     JWT_COOKIE_SECURE = True
-    # If frontend and backend are on different domains, we need None/Secure
-    JWT_COOKIE_SAMESITE = 'None' if os.environ.get('FRONTEND_URL') else 'Lax'
+    JWT_COOKIE_SAMESITE = 'Lax'
 
 
 config_map = {

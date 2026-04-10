@@ -5,7 +5,7 @@
 
 // If we are on Vercel (different origin than Render), we set this to the Render URL.
 // If empty, it assumes the backend is on the same origin (e.g. served by Flask).
-export const BASE_URL = window.TASKFLOW_BACKEND_URL || ''; 
+export const BASE_URL = ''; // Same origin — Flask serves both API and frontend
 
 // ---------------------------------------------------------------------------
 // Token storage (localStorage avoids cross-origin cookie issues in dev)
