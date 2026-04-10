@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow Pro — Analytics</title>
+  <meta name="description"
+    content="TaskFlow Pro analytics. Track completion rates, streaks, and productivity trends." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --brand: #8B5CF6;
+      --brand-hover: #7C3AED;
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --surface2: #F1F5F9;
+      --text: #0F172A;
+      --muted: #64748B;
+      --border-color: #0F172A;
+      --border-w: 3px;
+      --shadow-color: #0F172A;
+      --radius: 12px;
+      --danger: #EF4444;
+      --success: #10B981;
+      --sidebar-w: 240px;
+    }
+
+    body.dark {
+      --bg: #0F172A;
+      --surface: #1E293B;
+      --surface2: #334155;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --border-color: #000000;
+      --shadow-color: #000000;
+    }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background .2s;
+    }
+
+    /* ---------- Navbar ---------- */
+    .navbar {
+      height: 70px;
+      background: var(--surface);
+      border-bottom: var(--border-w) solid var(--border-color);
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 0 var(--shadow-color);
+    }
+
+    .nav-logo {
+      font-weight: 900;
+      font-size: 1.4rem;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .logo-mask {
+      display: inline-block;
+      mask-image: url('img/logo.png');
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      -webkit-mask-image: url('img/logo.png');
+      -webkit-mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+    }
+
+    .nav-logo .logo-mask {
+      width: 36px;
+      height: 36px;
+      background-color: var(--brand);
+    }
+
+    /* Modal classes */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 8px 8px 0 var(--shadow-color);
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      padding: .6rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 800;
+      box-shadow: 3px 3px 0 var(--shadow-color);
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    }
+
+    .btn-primary:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      padding: .6rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 800;
+      box-shadow: 3px 3px 0 var(--shadow-color);
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .btn-ghost:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    .nav-spacer {
+      flex: 1;
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      font-size: .9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: var(--border-w) solid var(--border-color);
+      background: var(--brand);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      flex-shrink: 0;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    .btn-icon {
+      background: var(--bg);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 10px;
+      padding: .4rem .8rem;
+      cursor: pointer;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--text);
+      font-family: inherit;
+      transition: transform 0.1s, box-shadow 0.1s;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+      text-transform: uppercase;
+    }
+
+    .btn-icon:hover {
+      background: var(--surface2);
+    }
+
+    .btn-icon:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    /* ---------- Sidebar ---------- */
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: var(--border-w) solid var(--border-color);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      z-index: 10;
+      transition: width 0.2s ease, padding 0.2s ease;
+      overflow-x: hidden;
+      white-space: nowrap;
+    }
+
+    .sidebar.collapsed {
+      width: 80px;
+      padding: 1.5rem 0.5rem;
+    }
+
+    .sidebar.collapsed .sidebar-label-text,
+    .sidebar.collapsed .nav-text {
+      display: none;
+    }
+
+    .sidebar.collapsed .sidebar-label {
+      justify-content: center !important;
+      padding: 0;
+    }
+
+    .sidebar.collapsed .nav-link {
+      justify-content: center;
+      padding: 0.8rem 0;
+      gap: 0;
+    }
+
+    .btn-collapse {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--brand);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+
+    .btn-collapse:hover {
+      color: var(--text);
+    }
+
+    .sidebar.collapsed .btn-collapse {
+      transform: rotate(180deg);
+    }
+
+    .sidebar-label {
+      font-size: .75rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      padding: 0 .5rem;
+      margin: 1rem 0 .5rem;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .6rem 1rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+      transition: all .15s;
+      border: var(--border-w) solid transparent;
+    }
+
+    .nav-link:hover {
+      color: var(--text);
+      border-color: var(--border-color);
+      background: var(--bg);
+      transform: translateX(4px);
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    .nav-link.active {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--border-color);
+      box-shadow: 3px 3px 0 var(--shadow-color);
+    }
+
+    /* ---------- Main Content ---------- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+    }
+
+    .main h1 {
+      font-size: 1.8rem;
+      font-weight: 900;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Skeleton */
+    .skeleton {
+      background: var(--surface2);
+      animation: shimmer 1.4s infinite;
+      border-radius: 12px;
+      border: var(--border-w) dashed var(--border-color);
+    }
+
+    @keyframes shimmer {
+      0% {
+        opacity: 0.5
+      }
+
+      50% {
+        opacity: 1
+      }
+
+      100% {
+        opacity: 0.5
+      }
+    }
+
+    /* Metric cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .metric-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--shadow-color);
+    }
+
+    .metric-label {
+      font-size: .85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--brand);
+      line-height: 1;
+    }
+
+    .metric-card.danger .metric-value {
+      color: var(--danger);
+    }
+
+    .metric-card.danger {
+      border-color: var(--danger);
+      box-shadow: 4px 4px 0 var(--danger);
+    }
+
+    .metric-card.danger:hover {
+      box-shadow: 6px 6px 0 var(--danger);
+    }
+
+    .skel-card {
+      height: 120px;
+    }
+
+    /* Charts */
+    .chart-card {
+      background: var(--surface);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+    }
+
+    .chart-title {
+      font-size: 1.1rem;
+      font-weight: 900;
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      color: var(--text);
+      padding-bottom: 0.5rem;
+      border-bottom: 3px solid var(--border-color);
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 320px;
+    }
+
+    .chart-wrap-sm {
+      position: relative;
+      height: 240px;
+    }
+
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    /* Streak Card Gamified */
+    .streak-card {
+      background: var(--surface);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      margin-top: 2rem;
+    }
+
+    .streak-card .left {
+      display: flex;
+      flex-direction: column;
+      z-index: 2;
+    }
+
+    .streak-num {
+      font-size: 5rem;
+      font-weight: 900;
+      line-height: 1;
+      color: #FFA500;
+      text-shadow: 4px 4px 0 var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .streak-label {
+      font-size: 1.2rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-top: 0.5rem;
+    }
+
+    .streak-sub {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    .streak-icon {
+      font-size: 8rem;
+      position: absolute;
+      right: 1rem;
+      top: -1rem;
+      opacity: 0.2;
+      transform: rotate(15deg);
+      user-select: none;
+      z-index: 1;
+    }
+
+    /* Error state */
+    .error-state {
+      text-align: center;
+      padding: 3rem;
+      border: var(--border-w) dashed var(--danger);
+      border-radius: 16px;
+      margin-top: 2rem;
+    }
+
+    .btn-retry {
+      background: var(--brand);
+      color: #fff;
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 10px;
+      padding: .6rem 1.25rem;
+      font-size: .9rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 1rem;
+      box-shadow: 3px 3px 0 var(--shadow-color);
+      transition: transform 0.1s;
+    }
+
+    .btn-retry:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    /* Dashboard Ring Styles */
+    .ring-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ring-svg {
+      transform: rotate(-90deg);
+      filter: drop-shadow(4px 4px 0 var(--shadow-color));
+      width: 100%;
+      height: 100%;
+      max-width: 240px;
+      max-height: 240px;
+    }
+
+    .ring-bg {
+      fill: none;
+      stroke: var(--surface2);
+      stroke-width: 12;
+    }
+
+    .ring-fg {
+      fill: none;
+      stroke-width: 12;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .ring-text {
+      position: absolute;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ring-text-value {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .ring-text-label {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+
+    /* Priority Legend */
+    .priority-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: var(--text);
+      text-transform: uppercase;
+    }
+
+    .legend-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 5px;
+      border: 2px solid var(--border-color);
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    @media (max-width:1024px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .charts-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width:768px) {
+      .metrics-grid {
+        grid-template-columns: 1fr 1fr
+      }
+    }
+  </style>
+</head>
+
+<body x-data="analyticsApp()" x-init="init()" :class="{ dark: darkMode }">
+
+  <nav class="navbar">
+    <a class="nav-logo" href="dashboard.html">
+      <div class="logo-mask"></div> TaskFlow Pro
+    </a>
+    <div class="nav-spacer"></div>
+    <div class="nav-user" x-data="{ settingsOpen: false }">
+      <template x-if="user?.avatar_url">
+        <img :src="user.avatar_url" class="avatar" style="object-fit: cover;" alt="Profile" />
+      </template>
+      <template x-if="!user?.avatar_url">
+        <div class="avatar" x-text="user?.name?.[0]?.toUpperCase() || '?'"></div>
+      </template>
+      <span x-text="user?.name || ''" style="display:none; @media(min-width:600px){display:block;}"></span>
+
+      <div style="position: relative; display: flex; align-items: center;">
+        <button class="btn-icon" @click="settingsOpen = !settingsOpen" title="Settings"
+          style="display: flex; align-items: center; justify-content: center; padding: 0.4rem; cursor: pointer;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
+        </button>
+
+        <div x-show="settingsOpen" @click.away="settingsOpen = false" x-transition.opacity.duration.200ms
+          style="display: none; position: absolute; right: 0; top: calc(100% + 0.5rem); background: var(--surface); border: var(--border-w) solid var(--border-color); border-radius: 12px; padding: 0.5rem; min-width: 170px; box-shadow: 4px 4px 0 var(--shadow-color); z-index: 9999; flex-direction: column; gap: 0.25rem;">
+
+          <button @click="toggleDark(); settingsOpen = false"
+            style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: flex-start; padding: 0.5rem 0.75rem; color: var(--text); font-family: inherit; font-weight: 800; font-size: 0.85rem; text-transform: uppercase;">
+            <svg x-show="!darkMode" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <svg x-show="darkMode" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <span x-text="darkMode ? 'Light Theme' : 'Dark Theme'"
+              style="line-height: 1; transform: translateY(1px);"></span>
+          </button>
+
+          <div style="height: 3px; background: var(--border-color); margin: 0.25rem 0; width: 100%;"></div>
+
+          <button @click="$dispatch('open-logout-modal'); settingsOpen = false"
+            style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: flex-start; color: var(--danger); padding: 0.5rem 0.75rem; font-family: inherit; font-weight: 800; font-size: 0.85rem; text-transform: uppercase;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span style="line-height: 1; transform: translateY(1px);">Exit App</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="app-body">
+    <aside class="sidebar" x-data="{ sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false' }"
+      :class="sidebarOpen ? '' : 'collapsed'">
+      <div class="sidebar-label" style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="sidebar-label-text">Navigation</span>
+        <button class="btn-collapse"
+          @click="sidebarOpen = !sidebarOpen; localStorage.setItem('sidebarOpen', sidebarOpen)" title="Toggle Sidebar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+      </div>
+      <a class="nav-link" href="dashboard.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span class="nav-text">Dashboard</span>
+      </a>
+      <a class="nav-link" href="calendar.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span class="nav-text">Calendar</span>
+      </a>
+      <a class="nav-link" href="focus.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span class="nav-text">Focus Timer</span>
+      </a>
+      <a class="nav-link active" href="analytics.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        <span class="nav-text">Analytics</span>
+      </a>
+    </aside>
+
+    <main class="main">
+      <h1>Dashboard Analytics</h1>
+
+      <!-- Loading skeletons -->
+      <template x-if="loading">
+        <div>
+          <div class="metrics-grid" style="margin-bottom:1.5rem">
+            <template x-for="i in 4" :key="i">
+              <div class="skeleton skel-card"></div>
+            </template>
+          </div>
+          <div class="skeleton" style="height:320px;border-radius:14px;margin-bottom:1.5rem"></div>
+          <div class="charts-row">
+            <div class="skeleton" style="height:260px;border-radius:14px"></div>
+            <div class="skeleton" style="height:260px;border-radius:14px"></div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Error state -->
+      <template x-if="!loading && error">
+        <div class="error-state">
+          <p style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem;">Could not load analytics data.</p>
+          <button class="btn-retry" @click="loadData()">Retry Data Sync</button>
+        </div>
+      </template>
+
+      <!-- Data -->
+      <template x-if="!loading && !error && data">
+        <div style="display:flex;flex-direction:column;gap:1.5rem">
+
+          <!-- Row 1: Metric cards -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">Total Quests</div>
+              <div class="metric-value" x-text="data.total_tasks"></div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Completed Today</div>
+              <div class="metric-value" x-text="data.completed_today"></div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Completion Mastery</div>
+              <div class="metric-value" x-text="data.completion_rate + '%'"></div>
+            </div>
+            <div class="metric-card" :class="{ danger: data.overdue_count > 0 }">
+              <div class="metric-label" x-text="data.overdue_count > 0 ? 'Urgent Bounties (Overdue)' : 'Overdue'"></div>
+              <div class="metric-value" x-text="data.overdue_count"></div>
+            </div>
+          </div>
+
+          <!-- Row 2: 14-day bar chart -->
+          <div class="chart-card">
+            <div class="chart-title">Quest Completion History — 14 Days</div>
+            <div class="chart-wrap"><canvas id="chart-bar"></canvas></div>
+          </div>
+
+          <!-- Row 3: Doughnut charts Gamified Rings! -->
+          <div class="charts-row">
+
+            <!-- Mastery Ring (Status) -->
+            <div class="chart-card">
+              <div class="chart-title">Daily Mastery Tracker</div>
+              <div class="chart-wrap-sm"
+                style="display: flex; align-items: center; justify-content: center; gap: 2rem;">
+                <div class="ring-container" style="width: 200px; height: 200px;">
+                  <svg class="ring-svg" viewBox="0 0 240 240">
+                    <circle class="ring-bg" cx="120" cy="120" r="100"></circle>
+                    <circle class="ring-fg" cx="120" cy="120" r="100" stroke="#10B981" stroke-dasharray="628.31"
+                      :stroke-dashoffset="628.31 - (628.31 * Math.min(data.completion_rate, 100) / 100)"></circle>
+                  </svg>
+                  <div class="ring-text">
+                    <div class="ring-text-value" x-text="data.completion_rate + '%'"></div>
+                    <div class="ring-text-label">Completed</div>
+                  </div>
+                </div>
+                <div class="priority-legend" style="flex:1">
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#10B981"></div> Done: <span
+                      x-text="data.by_status.done"></span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#F59E0B"></div> In Prog: <span
+                      x-text="data.by_status.in_progress"></span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#6B7280"></div> To Do: <span
+                      x-text="data.by_status.todo"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Priority Breakdown Ring -->
+            <div class="chart-card">
+              <div class="chart-title">Quest Priorities Base</div>
+              <div class="chart-wrap-sm"
+                style="display: flex; align-items: center; justify-content: center; gap: 2rem;">
+                <div class="ring-container" style="width: 200px; height: 200px;">
+                  <svg class="ring-svg" viewBox="0 0 240 240">
+                    <!-- Critical -->
+                    <circle class="ring-bg" cx="120" cy="120" r="100"></circle>
+                    <circle class="ring-fg" cx="120" cy="120" r="100" stroke="#EF4444" stroke-dasharray="628.31"
+                      :stroke-dashoffset="(() => { const t = data.by_priority.critical+data.by_priority.high+data.by_priority.medium+data.by_priority.low || 1; return 628.31 - (628.31 * (data.by_priority.critical / t)); })()">
+                    </circle>
+
+                    <!-- High -->
+                    <circle class="ring-bg" cx="120" cy="120" r="75"></circle>
+                    <circle class="ring-fg" cx="120" cy="120" r="75" stroke="#F59E0B" stroke-dasharray="471.24"
+                      :stroke-dashoffset="(() => { const t = data.by_priority.critical+data.by_priority.high+data.by_priority.medium+data.by_priority.low || 1; return 471.24 - (471.24 * (data.by_priority.high / t)); })()">
+                    </circle>
+
+                    <!-- Medium -->
+                    <circle class="ring-bg" cx="120" cy="120" r="50"></circle>
+                    <circle class="ring-fg" cx="120" cy="120" r="50" stroke="#3B82F6" stroke-dasharray="314.16"
+                      :stroke-dashoffset="(() => { const t = data.by_priority.critical+data.by_priority.high+data.by_priority.medium+data.by_priority.low || 1; return 314.16 - (314.16 * (data.by_priority.medium / t)); })()">
+                    </circle>
+                  </svg>
+                </div>
+                <div class="priority-legend" style="flex:1">
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#EF4444"></div> Crit: <span
+                      x-text="data.by_priority.critical"></span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#F59E0B"></div> High: <span
+                      x-text="data.by_priority.high"></span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#3B82F6"></div> Med: <span
+                      x-text="data.by_priority.medium"></span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#10B981"></div> Low: <span
+                      x-text="data.by_priority.low"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Row 4: Top Tags -->
+          <div class="chart-card" x-show="data.top_tags?.length > 0" style="margin-top: 2rem;">
+            <div class="chart-title">Frequent Skill Tags</div>
+            <div style="position:relative;height:240px"><canvas id="chart-tags"></canvas></div>
+          </div>
+
+          <!-- Row 5: Streak Gamified -->
+          <div class="streak-card">
+            <div class="streak-icon">🔥</div>
+            <template x-if="data.streak > 0">
+              <div class="left">
+                <div class="streak-num">
+                  <span x-text="data.streak"></span> <span style="font-size: 2.5rem; text-shadow: none;">🔥</span>
+                </div>
+                <div class="streak-label">Day Streak Badge</div>
+                <div class="streak-sub">Keep that combo meter climbing!</div>
+              </div>
+            </template>
+            <template x-if="data.streak === 0">
+              <div class="left">
+                <div class="streak-num" style="font-size:4rem; color: var(--muted); text-shadow: none;">-- 🔥</div>
+                <div class="streak-label" style="opacity: 0.5;">Awaiting Ignition...</div>
+                <div class="streak-sub">Complete a quest today to restore your streak multiplier.</div>
+              </div>
+            </template>
+          </div>
+
+        </div>
+      </template>
+    </main>
+  </div>
+
+  <!-- Logout Confirmation Modal -->
+  <div class="modal-overlay" style="z-index: 10000;" x-data="{ logoutOpen: false }"
+    @open-logout-modal.window="logoutOpen = true" x-show="logoutOpen" x-cloak>
+    <div class="modal" @click.away="logoutOpen = false" style="max-width: 400px; text-align: center; padding: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 900; color: var(--danger); margin-bottom: 0.5rem;">Abandon Quest?</h2>
+      <p style="font-size: 1rem; font-weight: 700; color: var(--muted); margin-bottom: 1.5rem;">
+        "Winners never quit, and quitters never win."
+      </p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button class="btn-ghost" @click="logoutOpen = false" style="flex: 1;">No, Stay</button>
+        <button class="btn-primary" @click="logout()"
+          style="flex: 1; background: var(--danger); border-color: var(--danger);">Yes, Exit</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script type="module">
+    import { auth, tasks, showToast } from './js/api.js';
+
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('analyticsApp', () => ({
+        user: null, data: null, loading: true, error: false, darkMode: false,
+        charts: {},
+
+        async init() {
+          this.darkMode = localStorage.getItem('theme') === 'dark';
+          const res = await auth.me();
+          if (!res?.ok) { window.location.href = 'index.html'; return; }
+          this.user = res.data;
+          await this.loadData();
+        },
+
+        toggleDark() { this.darkMode = !this.darkMode; localStorage.setItem('theme', this.darkMode ? 'dark' : 'light'); },
+        async logout() { await auth.logout(); window.location.href = 'index.html'; },
+
+        async loadData() {
+          this.loading = true; this.error = false;
+          const res = await tasks.analytics();
+          if (!res?.ok) { this.error = true; this.loading = false; return; }
+          this.data = res.data;
+          this.loading = false;
+          await this.$nextTick();
+          // Delay to let browser finish painting x-show transition before Chart.js measures canvas
+          setTimeout(() => this.renderCharts(), 150);
+        },
+
+        renderCharts() {
+          const d = this.data;
+          // Destroy old charts
+          Object.values(this.charts).forEach(c => c.destroy());
+          this.charts = {};
+
+          const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111827';
+          const gridColor = this.darkMode ? '#334155' : '#0F172A';
+
+          // --- Gamified Bar chart: 14-day completions ---
+          this.charts.bar = new Chart(document.getElementById('chart-bar'), {
+            type: 'bar',
+            data: {
+              labels: d.daily_completions.map(dc => {
+                const dt = new Date(dc.date);
+                return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              }),
+              datasets: [{
+                label: 'Quests Cleared',
+                data: d.daily_completions.map(dc => dc.count),
+                backgroundColor: '#8B5CF6',
+                borderColor: '#111827',
+                borderWidth: 2,
+                borderRadius: 0,
+                borderSkipped: false
+              }],
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { ticks: { color: textColor, font: { size: 12, weight: 'bold' } }, grid: { display: false } },
+                y: { min: 0, suggestedMax: 5, ticks: { precision: 0, color: textColor, font: { size: 12, weight: 'bold' }, stepSize: 1 }, grid: { display: true, color: gridColor, lineWidth: 1, borderDash: [5, 5] } },
+              },
+            },
+          });
+
+          // Doughnut charts replaced by native SVG Rings in HTML! 
+
+          // --- Horizontal bar: Top tags Gamified ---
+          if (d.top_tags?.length > 0) {
+            this.charts.tags = new Chart(document.getElementById('chart-tags'), {
+              type: 'bar',
+              data: {
+                labels: d.top_tags.map(t => t.tag),
+                datasets: [{
+                  label: 'Uses',
+                  data: d.top_tags.map(t => t.count),
+                  backgroundColor: '#8B5CF6',
+                  borderColor: this.darkMode ? '#000' : '#0F172A',
+                  borderWidth: 3,
+                  hoverBackgroundColor: '#7C3AED',
+                  borderRadius: 4
+                }],
+              },
+              options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: { beginAtZero: true, suggestedMax: 5, ticks: { precision: 0, color: textColor, font: { size: 12, weight: 'bold' }, stepSize: 1 }, grid: { color: gridColor, lineWidth: 1, borderDash: [5, 5] } },
+                  y: { ticks: { color: textColor, font: { size: 12, weight: 'bold' } }, grid: { display: false } },
+                },
+              },
+            });
+          }
+        },
+      }));
+    });
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</body>
+
+</html>

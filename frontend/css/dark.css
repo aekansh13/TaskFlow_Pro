@@ -1,0 +1,21 @@
+/* =====================================================
+   TaskFlow Pro — dark.css
+   Additional dark-mode overrides (supplementary).
+   The primary dark mode is handled via CSS variables
+   in main.css using body.dark token overrides.
+   This file holds any component-level dark overrides
+   that cannot be handled by variables alone.
+   ===================================================== */
+
+body.dark .card {
+  border-color: var(--color-border);
+}
+
+body.dark .badge {
+  opacity: 0.85;
+}
+
+body.dark input::placeholder,
+body.dark textarea::placeholder {
+  color: var(--color-text-muted);
+}

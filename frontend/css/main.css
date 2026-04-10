@@ -1,0 +1,78 @@
+/* =====================================================
+   TaskFlow Pro — main.css
+   Global design tokens, resets, and base styles.
+   Full styles implemented in Phase 5.
+   ===================================================== */
+
+:root {
+  --color-brand:       #1A56DB;
+  --color-brand-dark:  #1347C0;
+  --color-bg:          #F9FAFB;
+  --color-surface:     #FFFFFF;
+  --color-text:        #111827;
+  --color-text-muted:  #6B7280;
+  --color-border:      #E5E7EB;
+  --color-danger:      #EF4444;
+  --color-success:     #10B981;
+  --color-warning:     #F59E0B;
+  --radius:            0.5rem;
+  --shadow-sm:         0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:         0 4px 12px rgba(0,0,0,.12);
+  --transition:        150ms ease;
+  --font-body:         'Inter', system-ui, sans-serif;
+}
+
+/* Dark mode tokens — applied when <body class="dark"> */
+body.dark {
+  --color-bg:      #0F172A;
+  --color-surface: #1E293B;
+  --color-text:    #F1F5F9;
+  --color-text-muted: #94A3B8;
+  --color-border:  #334155;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  transition: background var(--transition), color var(--transition);
+}
+
+a { color: var(--color-brand); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: opacity var(--transition), background var(--transition);
+}
+
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  width: 100%;
+  transition: border-color var(--transition);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(26,86,219,.15);
+}

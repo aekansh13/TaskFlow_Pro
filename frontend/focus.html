@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow Pro — Focus</title>
+  <meta name="description" content="TaskFlow Pro focus timer. Gamified Pomodoro sessions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #F5F3FF;
+      --surface: #FFFFFF;
+      --surface2: #F8FAFC;
+      --text: #0F172A;
+      --muted: #64748B;
+      --brand: #8B5CF6;
+      --brand-hover: #7C3AED;
+      --danger: #EF4444;
+      --danger-bg: #FEF2F2;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --border-color: #0F172A;
+      --shadow-color: #0F172A;
+      --break-bg: #D1FAE5;
+      --break-ring: #10B981;
+      --radius: 16px;
+      --border-w: 3px;
+      --sidebar-w: 240px;
+    }
+
+    body.dark {
+      --bg: #0F111A;
+      --surface: #1B1E28;
+      --surface2: #242838;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --border-color: #334155;
+      --shadow-color: #000000;
+      --danger-bg: #450A0A;
+      --break-bg: #064E3B;
+      --break-ring: #34D399;
+    }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.on-break {
+      background: var(--break-bg) !important;
+      --brand: var(--break-ring) !important;
+      --success: var(--break-ring) !important;
+    }
+
+    /* Deep Work Red Theme Override */
+    body.mode-deep {
+      --brand: #EF4444;
+      --bg: #FEF2F2;
+    }
+
+    body.mode-deep.dark {
+      --bg: #450A0A;
+      --brand: #F87171;
+    }
+
+    /* 10 Min Break Blue Theme Override */
+    body.on-break-blue {
+      --break-bg: #E0F2FE;
+      --break-ring: #0EA5E9;
+    }
+
+    body.on-break-blue.dark {
+      --break-bg: #082F49;
+      --break-ring: #38BDF8;
+    }
+
+    body.on-break-blue .timer-wrap {
+      box-shadow: 12px 12px 0 rgba(14, 165, 233, 0.4), inset 0 0 20px rgba(14, 165, 233, 0.1) !important;
+    }
+
+    /* Gamified Background Pattern */
+    .bg-pattern {
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(var(--border-color) 1.5px, transparent 1.5px);
+      background-size: 32px 32px;
+      opacity: 0.08;
+      z-index: 0;
+      pointer-events: none;
+      animation: panBg 40s linear infinite;
+    }
+
+    body.dark .bg-pattern {
+      opacity: 0.2;
+    }
+
+    @keyframes panBg {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: 100% 100%;
+      }
+    }
+
+    /* ---------- Navbar ---------- */
+    .navbar {
+      height: 70px;
+      background: var(--surface);
+      border-bottom: var(--border-w) solid var(--border-color);
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 0 var(--shadow-color);
+    }
+
+    .nav-logo {
+      font-weight: 900;
+      font-size: 1.4rem;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .logo-mask {
+      display: inline-block;
+      mask-image: url('img/logo.png');
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      -webkit-mask-image: url('img/logo.png');
+      -webkit-mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+    }
+
+    .nav-logo .logo-mask {
+      width: 36px; height: 36px;
+      background-color: var(--brand);
+    }
+
+    /* Modal classes */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10000;
+    }
+    .modal {
+      background: var(--surface);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 90%; max-width: 500px;
+      box-shadow: 8px 8px 0 var(--shadow-color);
+    }
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      padding: .6rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 800;
+      box-shadow: 3px 3px 0 var(--shadow-color);
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    }
+    .btn-primary:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      padding: .6rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 800;
+      box-shadow: 3px 3px 0 var(--shadow-color);
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .btn-ghost:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    .nav-spacer {
+      flex: 1;
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      font-size: .9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: var(--border-w) solid var(--border-color);
+      background: var(--brand);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      flex-shrink: 0;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    .btn-icon-nav {
+      background: var(--bg);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 10px;
+      padding: .4rem .8rem;
+      cursor: pointer;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--text);
+      transition: transform 0.1s, box-shadow 0.1s;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+      text-transform: uppercase;
+    }
+
+    .btn-icon-nav:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    /* ---------- Layout ---------- */
+    .app-body {
+      display: flex;
+      flex: 1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: var(--border-w) solid var(--border-color);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      z-index: 10;
+      transition: width 0.2s ease, padding 0.2s ease;
+      overflow-x: hidden;
+      white-space: nowrap;
+    }
+
+    .sidebar.collapsed {
+      width: 80px;
+      padding: 1.5rem 0.5rem;
+    }
+
+    .sidebar.collapsed .sidebar-label-text,
+    .sidebar.collapsed .nav-text {
+      display: none;
+    }
+
+    .sidebar.collapsed .sidebar-label {
+      justify-content: center !important;
+      padding: 0;
+    }
+
+    .sidebar.collapsed .nav-link {
+      justify-content: center;
+      padding: 0.8rem 0;
+      gap: 0;
+    }
+
+    .btn-collapse {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--brand);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+
+    .btn-collapse:hover {
+      color: var(--text);
+    }
+
+    .sidebar.collapsed .btn-collapse {
+      transform: rotate(180deg);
+    }
+
+    .sidebar-label {
+      font-size: .75rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      padding: 0 .5rem;
+      margin: 1rem 0 .5rem;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .6rem 1rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+      transition: all .15s;
+      border: var(--border-w) solid transparent;
+    }
+
+    .nav-link:hover {
+      color: var(--text);
+      border-color: var(--border-color);
+      background: var(--bg);
+      transform: translateX(4px);
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    .nav-link.active {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--border-color);
+      box-shadow: 3px 3px 0 var(--shadow-color);
+    }
+
+    /* ---------- Main ---------- */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 2.5rem 1.5rem;
+      gap: 2rem;
+      overflow-y: auto;
+    }
+
+    /* ---------- Quick Setup / Mode Toggle ---------- */
+    .mode-toggle-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      background: var(--surface);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      box-shadow: 6px 6px 0 var(--shadow-color);
+    }
+
+    .mode-toggle-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .divider-vert {
+      width: var(--border-w);
+      background: var(--border-color);
+      border-radius: 2px;
+    }
+
+    .mode-btn {
+      padding: .6rem 1rem;
+      border: var(--border-w) solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: .95rem;
+      font-weight: 800;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface2);
+      transition: all .1s;
+      box-shadow: 2px 2px 0 transparent;
+    }
+
+    .mode-btn:hover:not(:disabled) {
+      border-color: var(--border-color);
+      box-shadow: 3px 3px 0 var(--shadow-color);
+      transform: translate(-2px, -2px);
+    }
+
+    .mode-btn.active {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--border-color);
+      box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.2);
+      transform: translate(1px, 1px);
+    }
+
+    .mode-btn.active-break {
+      background: var(--success);
+      color: #fff;
+      border-color: var(--border-color);
+      box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.2);
+      transform: translate(1px, 1px);
+    }
+
+    .mode-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ---------- Task selector ---------- */
+    .task-selector-wrap {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .task-selector-label {
+      font-size: .85rem;
+      font-weight: 800;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: .6rem;
+      text-align: center;
+    }
+
+    .task-select {
+      width: 100%;
+      padding: .8rem 1.25rem;
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .task-select:focus {
+      outline: none;
+      box-shadow: 6px 6px 0 var(--brand);
+      transform: translate(-2px, -2px);
+    }
+
+    /* ---------- Gamified Charging Ring ---------- */
+    .timer-wrap {
+      position: relative;
+      width: 340px;
+      height: 340px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      border-radius: 50%;
+      border: var(--border-w) solid var(--border-color);
+      box-shadow: 12px 12px 0 var(--shadow-color), inset 0 0 20px rgba(0, 0, 0, 0.05);
+    }
+
+    body.on-break .timer-wrap {
+      background: var(--bg);
+      box-shadow: 12px 12px 0 rgba(16, 185, 129, 0.4), inset 0 0 20px rgba(16, 185, 129, 0.1);
+    }
+
+    .ring-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+      padding: 14px;
+    }
+
+    .ring-bg {
+      fill: none;
+      stroke: var(--surface2);
+      stroke-width: 14;
+    }
+
+    .ring-fg {
+      fill: none;
+      stroke: var(--brand);
+      stroke-width: 14;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 4px var(--brand));
+      transition: stroke-dashoffset .9s linear, stroke .3s;
+    }
+
+    .ring-fg.break-ring {
+      stroke: var(--break-ring);
+      filter: drop-shadow(0 0 4px var(--break-ring));
+    }
+
+    .timer-inner {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .timer-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 5.5rem;
+      font-weight: 800;
+      letter-spacing: -4px;
+      color: var(--text);
+      line-height: 1;
+      text-shadow: 4px 4px 0 var(--brand);
+      transition: text-shadow 0.3s;
+    }
+
+    body.on-break .timer-display {
+      text-shadow: 4px 4px 0 var(--break-ring);
+    }
+
+    .timer-display.pulsing {
+      animation: pulse-timer 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse-timer {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: .7;
+        transform: scale(1.05);
+      }
+    }
+
+    .timer-mode-label {
+      font-size: 1rem;
+      font-weight: 900;
+      color: var(--text);
+      margin-top: 1rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .timer-session {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--brand);
+      margin-top: .4rem;
+    }
+
+    body.on-break .timer-session {
+      color: var(--break-ring);
+    }
+
+    /* ---------- Progress bar ---------- */
+    .progress-bar-wrap {
+      width: 100%;
+      max-width: 340px;
+      height: 12px;
+      background: var(--surface2);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 999px;
+      overflow: hidden;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--brand);
+      border-radius: 999px;
+      transition: width .9s linear;
+    }
+
+    .progress-bar-fill.break-fill {
+      background: var(--break-ring);
+    }
+
+    /* ---------- Controls ---------- */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-control {
+      padding: .85rem 2rem;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: inherit;
+      border: var(--border-w) solid var(--border-color);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .btn-start {
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+    }
+
+    .btn-start:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    .btn-pause {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 4px 4px 0 var(--shadow-color);
+    }
+
+    .btn-pause:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    .btn-reset {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: var(--border-w) solid var(--danger);
+      padding: .85rem 1.5rem;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.1s, box-shadow 0.1s;
+      box-shadow: 4px 4px 0 var(--danger);
+      text-transform: uppercase;
+    }
+
+    .btn-reset:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0 0 0 var(--danger);
+    }
+
+    .btn-break {
+      background: var(--success);
+      color: #fff;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+    }
+
+    .btn-break:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    /* ---------- Focused task display ---------- */
+    .focused-task {
+      background: var(--surface);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem 2rem;
+      text-align: center;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 6px 6px 0 var(--shadow-color);
+    }
+
+    .focused-task-label {
+      font-size: .8rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: .5rem;
+    }
+
+    .focused-task-name {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--brand);
+    }
+
+    /* ---------- Session log message ---------- */
+    .log-msg {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #FFF;
+      background: var(--success);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      padding: .6rem 1.25rem;
+      box-shadow: 3px 3px 0 var(--shadow-color);
+      animation: fade-in .3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* ---------- Session dots ---------- */
+    .session-dots {
+      display: flex;
+      gap: .75rem;
+    }
+
+    .dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 3px solid var(--border-color);
+      background: var(--surface2);
+      transition: background .3s, transform 0.2s;
+    }
+
+    .dot.completed {
+      background: var(--brand);
+      transform: rotate(45deg);
+    }
+
+    .dot.current {
+      background: var(--brand);
+      opacity: .5;
+      animation: blink .8s ease-in-out infinite alternate;
+    }
+
+    @keyframes blink {
+      from {
+        transform: scale(1);
+      }
+
+      to {
+        transform: scale(1.3);
+      }
+    }
+
+    /* Fix Alpine transition cloak */
+    [x-cloak] {
+      display: none !important;
+    }
+
+    /* Alarm Settings Box */
+    .alarm-settings {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--surface);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+      z-index: 50;
+      transition: transform 0.1s, box-shadow 0.1s;
+      width: 220px;
+    }
+
+    .alarm-select {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--surface2);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+      outline: none;
+      margin-top: 0.6rem;
+    }
+
+    .alarm-select:focus {
+      border-color: var(--brand);
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--brand);
+    }
+
+    @media (max-width: 768px) {
+      .alarm-settings {
+        bottom: 1rem;
+        right: 1rem;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .main {
+        padding: 1.5rem 1rem;
+      }
+
+      .timer-display {
+        font-size: 4rem;
+        text-shadow: 2px 2px 0 var(--brand);
+      }
+    }
+  </style>
+</head>
+
+<body x-data="focusApp()" x-init="init()" :class="{ 
+  dark: darkMode, 
+  'on-break': phase === 'break',
+  'mode-deep': mode === 'deep' && phase !== 'break',
+  'on-break-blue': phase === 'break' && (mode === 'break_10' || (mode === 'deep' && sessionsCompleted < 4)) 
+}">
+
+  <div class="bg-pattern"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a class="nav-logo" href="dashboard.html"> <div class="logo-mask"></div> TaskFlow Pro</a>
+    <div class="nav-spacer"></div>
+    <div class="nav-user" x-data="{ settingsOpen: false }">
+      <template x-if="user?.avatar_url">
+        <img :src="user.avatar_url" class="avatar" style="object-fit: cover;" alt="Profile" />
+      </template>
+      <template x-if="!user?.avatar_url">
+        <div class="avatar" x-text="user?.name?.[0]?.toUpperCase() || '?'"></div>
+      </template>
+      <span x-text="user?.name || ''" style="display:none; @media(min-width:600px){display:block;}"></span>
+
+      <div style="position: relative; display: flex; align-items: center;">
+        <button class="btn-icon-nav" @click="settingsOpen = !settingsOpen" title="Settings"
+          style="display: flex; align-items: center; justify-content: center; padding: 0.4rem; cursor: pointer;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
+        </button>
+
+        <div x-show="settingsOpen" @click.away="settingsOpen = false" x-transition.opacity.duration.200ms
+          style="display: none; position: absolute; right: 0; top: calc(100% + 0.5rem); background: var(--surface); border: var(--border-w) solid var(--border-color); border-radius: 12px; padding: 0.5rem; min-width: 170px; box-shadow: 4px 4px 0 var(--shadow-color); z-index: 9999; flex-direction: column; gap: 0.25rem;">
+
+          <button @click="toggleDark(); settingsOpen = false"
+            style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: flex-start; padding: 0.5rem 0.75rem; color: var(--text); font-family: inherit; font-weight: 800; font-size: 0.85rem; text-transform: uppercase;">
+            <svg x-show="!darkMode" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <svg x-show="darkMode" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <span x-text="darkMode ? 'Light Theme' : 'Dark Theme'"
+              style="line-height: 1; transform: translateY(1px);"></span>
+          </button>
+
+          <div style="height: 3px; background: var(--border-color); margin: 0.25rem 0; width: 100%;"></div>
+
+          <button @click="$dispatch('open-logout-modal'); settingsOpen = false"
+            style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: flex-start; color: var(--danger); padding: 0.5rem 0.75rem; font-family: inherit; font-weight: 800; font-size: 0.85rem; text-transform: uppercase;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span style="line-height: 1; transform: translateY(1px);">Exit App</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="app-body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" x-data="{ sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false' }"
+      :class="sidebarOpen ? '' : 'collapsed'">
+      <div class="sidebar-label" style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="sidebar-label-text">Navigation</span>
+        <button class="btn-collapse"
+          @click="sidebarOpen = !sidebarOpen; localStorage.setItem('sidebarOpen', sidebarOpen)" title="Toggle Sidebar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+      </div>
+      <a class="nav-link" href="dashboard.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span class="nav-text">Dashboard</span>
+      </a>
+      <a class="nav-link" href="calendar.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span class="nav-text">Calendar</span>
+      </a>
+      <a class="nav-link active" href="focus.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span class="nav-text">Focus Timer</span>
+      </a>
+      <a class="nav-link" href="analytics.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        <span class="nav-text">Analytics</span>
+      </a>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+
+      <!-- Mode selector / Break Triggers -->
+      <div class="mode-toggle-wrap">
+        <div class="mode-toggle-group">
+          <button class="mode-btn" :class="{ active: mode === 'standard' && phase !== 'break' }"
+            :disabled="phase === 'focus' || phase === 'session-done'" @click="setMode('standard')">
+            ⚡ 25 Min
+          </button>
+          <button class="mode-btn" :class="{ active: mode === 'deep' && phase !== 'break' }"
+            :disabled="phase === 'focus' || phase === 'session-done'" @click="setMode('deep')">
+            🧠 50 Min
+          </button>
+        </div>
+
+        <div class="divider-vert"></div>
+
+        <div class="mode-toggle-group">
+          <!-- "Front" quick break triggers as requested! -->
+          <button class="mode-btn" :class="{ 'active-break': mode === 'break_5' }" :disabled="phase === 'focus'"
+            @click="forceBreak(5, 'break_5')">
+            ☕ 5 Min
+          </button>
+          <button class="mode-btn" :class="{ 'active-break': mode === 'break_10' }" :disabled="phase === 'focus'"
+            @click="forceBreak(10, 'break_10')">
+            🛋️ 10 Min
+          </button>
+        </div>
+      </div>
+
+      <!-- Task selector -->
+      <div class="task-selector-wrap">
+        <div class="task-selector-label">Main Objective (Target)</div>
+        <select id="task-select" class="task-select" x-model="selectedTaskId">
+          <option value="">No targets selected...</option>
+          <template x-for="t in taskOptions" :key="t.id">
+            <option :value="t.id" x-text="t.title"></option>
+          </template>
+        </select>
+      </div>
+
+      <!-- Gamified Charging Target / Timer ring -->
+      <div class="timer-wrap">
+        <svg class="ring-svg" viewBox="0 0 280 280">
+          <circle class="ring-bg" cx="140" cy="140" r="122" />
+          <circle class="ring-fg" :class="{ 'break-ring': phase === 'break' }" cx="140" cy="140" r="122"
+            :stroke-dasharray="ringCirc" :stroke-dashoffset="ringOffset" />
+        </svg>
+        <div class="timer-inner">
+          <div id="timer-display" class="timer-display" :class="{ pulsing: phase === 'focus' && running }"
+            x-text="formattedTime"></div>
+          <div class="timer-mode-label" x-text="modeLabel"></div>
+          <div class="timer-session" x-show="phase !== 'break'" x-text="`Power level ${sessionsCompleted + 1} of 4`">
+          </div>
+        </div>
+      </div>
+
+      <!-- Session dot indicators -->
+      <div class="session-dots" x-show="phase !== 'break'">
+        <template x-for="i in 4" :key="i">
+          <div class="dot" :class="{
+              completed: i <= sessionsCompleted,
+              current: i === sessionsCompleted + 1 && phase === 'focus'
+            }">
+          </div>
+        </template>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-bar-wrap" x-show="phase === 'break'">
+        <div class="progress-bar-fill break-fill" :style="`width: ${progressPct}%`"></div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <!-- Focus phase controls -->
+        <template x-if="phase === 'idle' || phase === 'focus'">
+          <button id="btn-start-pause" class="btn-control" :class="running ? 'btn-pause' : 'btn-start'"
+            @click="toggleTimer()">
+            <span x-text="running ? '❚❚ Pause' : (phase === 'idle' ? '▶ Start Focus' : '▶ Resume')"></span>
+          </button>
+        </template>
+
+        <!-- Session Done flow (Classic Pomodoro logic) -->
+        <template x-if="phase === 'session-done'">
+          <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;justify-content:center">
+            <button class="btn-control btn-break" @click="startBreak()">
+              <span x-text="sessionsCompleted >= 4 ? '🛌 Take Long Break (15m)' : '☕ Start Break (5m)'"></span>
+            </button>
+            <button class="btn-control btn-pause" @click="skipBreak()">Skip Break ⏭️</button>
+          </div>
+        </template>
+
+        <!-- Break controls -->
+        <template x-if="phase === 'break'">
+          <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;justify-content:center">
+            <button class="btn-control" :class="running ? 'btn-pause' : 'btn-start'" @click="toggleTimer()">
+              <span x-text="running ? '❚❚ Pause Break' : '▶ Start Break'"></span>
+            </button>
+            <button class="btn-control btn-reset" @click="endBreak()">Abort Break</button>
+          </div>
+        </template>
+
+        <!-- Next session button (shown after break ends) -->
+        <template x-if="phase === 'break-done'">
+          <button class="btn-control btn-start" @click="nextSession()">Respawn (Start Next Session)</button>
+        </template>
+
+        <!-- Reset (always visible except during break) -->
+        <template x-if="phase !== 'break'">
+          <button id="btn-reset" class="btn-reset" @click="resetTimer()">Abort / Reset</button>
+        </template>
+      </div>
+
+      <!-- Focused task display -->
+      <div class="focused-task" x-show="selectedTaskId">
+        <div class="focused-task-label">Current Locked Target</div>
+        <div class="focused-task-name" x-text="selectedTaskTitle"></div>
+      </div>
+
+      <!-- Session log message -->
+      <div class="log-msg" x-show="logMessage" x-cloak x-text="logMessage"></div>
+
+      <!-- Alarm Settings Box -->
+      <div class="alarm-settings">
+        <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;margin:0">
+          <input type="checkbox" x-model="alarmEnabled" @change="saveAlarmPref()"
+            style="width:20px;height:20px;accent-color:var(--brand)">
+          <span style="font-weight:800; font-size:0.9rem; text-transform:uppercase; letter-spacing:0.5px">🔔
+            Alarm</span>
+        </label>
+
+        <div x-show="alarmEnabled" x-cloak x-transition>
+          <select class="alarm-select" x-model="alarmType" @change="saveAlarmPref(); playAlarm()">
+            <option value="bell">Standard Bell</option>
+            <option value="levelup">Level Up</option>
+            <option value="beep">Digital Beep</option>
+            <option value="chime">Gentle Chime</option>
+          </select>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Logout Confirmation Modal -->
+  <div class="modal-overlay" style="z-index: 10000;" x-data="{ logoutOpen: false }" @open-logout-modal.window="logoutOpen = true" x-show="logoutOpen" x-cloak>
+    <div class="modal" @click.away="logoutOpen = false" style="max-width: 400px; text-align: center; padding: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 900; color: var(--danger); margin-bottom: 0.5rem;">Abandon Quest?</h2>
+      <p style="font-size: 1rem; font-weight: 700; color: var(--muted); margin-bottom: 1.5rem;">
+        "Winners never quit, and quitters never win."
+      </p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button class="btn-ghost" @click="logoutOpen = false" style="flex: 1;">No, Stay</button>
+        <button class="btn-primary" @click="logout()" style="flex: 1; background: var(--danger); border-color: var(--danger);">Yes, Exit</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script type="module">
+    import { auth, tasks, showToast, BASE_URL } from './js/api.js';
+
+    // Added custom break times to the configs
+    const MODES = {
+      standard: { focus: 25 * 60, short_break: 5 * 60, long_break: 15 * 60, label: 'Standard Focus' },
+      deep: { focus: 50 * 60, short_break: 10 * 60, long_break: 15 * 60, label: 'Deep Work' },
+      break_5: { breakTime: 5 * 60, label: 'Short Break' },
+      break_10: { breakTime: 10 * 60, label: 'Long Break' },
+    };
+    const CIRC = 2 * Math.PI * 122; // Adjusted for radius 122
+
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('focusApp', () => ({
+        user: null, darkMode: false,
+        mode: 'standard', // Keeps track of active UI button
+        phase: 'idle',    // 'idle' | 'focus' | 'session-done' | 'break' | 'break-done'
+        running: false,
+        timeLeft: MODES.standard.focus,
+        totalTime: MODES.standard.focus,
+        sessionsCompleted: 0,
+        interval: null,
+        taskOptions: [],
+        selectedTaskId: '',
+        logMessage: '',
+        logTimeout: null,
+        alarmEnabled: true,
+        alarmType: 'bell',
+
+        // Ring Math
+        ringCirc: CIRC,
+        get ringOffset() {
+          return CIRC * (1 - (this.timeLeft / this.totalTime));
+        },
+
+        get progressPct() {
+          return ((this.totalTime - this.timeLeft) / this.totalTime) * 100;
+        },
+
+        get formattedTime() {
+          const m = Math.floor(this.timeLeft / 60).toString().padStart(2, '0');
+          const s = (this.timeLeft % 60).toString().padStart(2, '0');
+          return `${m}:${s}`;
+        },
+
+        get modeLabel() {
+          if (this.phase === 'break') {
+            return `Chilling (${MODES[this.mode]?.label || 'Break'})`;
+          }
+          if (this.phase === 'break-done' || this.phase === 'session-done') { return 'Break Over'; }
+          return MODES[this.mode]?.label || 'Focus';
+        },
+
+        get selectedTaskTitle() {
+          return this.taskOptions.find(t => t.id === this.selectedTaskId)?.title || '';
+        },
+
+        async init() {
+          this.darkMode = localStorage.getItem('theme') === 'dark';
+          this.alarmEnabled = localStorage.getItem('alarm') !== 'false';
+          this.alarmType = localStorage.getItem('alarmType') || 'bell';
+          const res = await auth.me();
+          if (!res?.ok) { window.location.href = 'index.html'; return; }
+          this.user = res.data;
+          this.requestNotificationPermission();
+          await this.loadTasks();
+        },
+
+        requestNotificationPermission() {
+          if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+          }
+        },
+
+        notify(title, body) {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, { body, icon: '/favicon.ico' });
+          }
+        },
+
+        toggleDark() {
+          this.darkMode = !this.darkMode;
+          localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+        },
+
+        async logout() { await auth.logout(); window.location.href = 'index.html'; },
+
+        async loadTasks() {
+          const [todoRes, inProgressRes] = await Promise.all([
+            tasks.list({ status: 'todo' }),
+            tasks.list({ status: 'in_progress' }),
+          ]);
+          const all = [
+            ...(todoRes?.ok ? todoRes.data : []),
+            ...(inProgressRes?.ok ? inProgressRes.data : []),
+          ];
+          this.taskOptions = all;
+        },
+
+        setMode(m) {
+          this.mode = m;
+          this.phase = 'idle';
+          this.running = false;
+          clearInterval(this.interval);
+          this.timeLeft = MODES[m].focus;
+          this.totalTime = MODES[m].focus;
+        },
+
+        // New quick-breaks forced by user front buttons
+        forceBreak(minutes, modeId) {
+          this.mode = modeId;
+          this.phase = 'break';
+          this.running = false;
+          clearInterval(this.interval);
+          this.timeLeft = minutes * 60;
+          this.totalTime = minutes * 60;
+        },
+
+        toggleTimer() {
+          if (this.running) {
+            this.pauseTimer();
+          } else {
+            this.startTimer();
+          }
+        },
+
+        startTimer() {
+          this.running = true;
+          if (this.phase === 'idle') this.phase = 'focus';
+          if (this.interval) clearInterval(this.interval);
+          this.interval = setInterval(() => this.tick(), 1000);
+        },
+
+        pauseTimer() {
+          this.running = false;
+          if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = null;
+          }
+        },
+
+        tick() {
+          if (this.timeLeft <= 0) {
+            this.onTimerEnd();
+            return;
+          }
+          this.timeLeft--;
+        },
+
+        async onTimerEnd() {
+          this.running = false;
+          clearInterval(this.interval);
+          this.interval = null;
+
+          this.playAlarm();
+
+          if (this.phase === 'focus') {
+            this.sessionsCompleted++;
+            this.notify('Quest segment complete!', 'Time for a break.');
+            showToast('Quest segment complete!', 'success');
+
+            // Log pomodoro to task
+            if (this.selectedTaskId) {
+              await tasks.addPomodoro(this.selectedTaskId);
+              this.showLog(`+1 🍅 logged to "${this.selectedTaskTitle}"`);
+            }
+
+            this.phase = 'session-done';
+
+          } else if (this.phase === 'break') {
+            this.notify('Break over!', 'Ready to lock in?');
+            showToast('Break over! Click to respawn.', 'info');
+            this.phase = 'break-done';
+          }
+        },
+
+        startBreak() {
+          // If coming from a standard/deep focus ending naturally
+          const config = MODES[this.mode === 'break_5' || this.mode === 'break_10' ? 'standard' : this.mode];
+          const breakDuration = this.sessionsCompleted >= 4
+            ? config.long_break
+            : config.short_break;
+          this.timeLeft = breakDuration;
+          this.totalTime = breakDuration;
+          this.phase = 'break';
+          this.running = false;
+        },
+
+        endBreak() {
+          this.pauseTimer();
+          this.phase = 'break-done';
+        },
+
+        skipBreak() {
+          this.phase = 'break-done';
+          this.nextSession();
+        },
+
+        nextSession() {
+          if (this.sessionsCompleted >= 4) this.sessionsCompleted = 0;
+          // Revert to standard if they were on a forced break
+          if (this.mode === 'break_5' || this.mode === 'break_10') this.mode = 'standard';
+
+          this.timeLeft = MODES[this.mode].focus;
+          this.totalTime = MODES[this.mode].focus;
+          this.phase = 'idle';
+          this.running = false;
+        },
+
+        resetTimer() {
+          this.pauseTimer();
+          if (this.mode === 'break_5' || this.mode === 'break_10') this.mode = 'standard';
+          this.phase = 'idle';
+          this.timeLeft = MODES[this.mode].focus;
+          this.totalTime = MODES[this.mode].focus;
+          this.logMessage = '';
+        },
+
+        showLog(msg) {
+          this.logMessage = msg;
+          clearTimeout(this.logTimeout);
+          this.logTimeout = setTimeout(() => { this.logMessage = ''; }, 4000);
+        },
+
+        saveAlarmPref() {
+          localStorage.setItem('alarm', this.alarmEnabled);
+          localStorage.setItem('alarmType', this.alarmType);
+        },
+
+        playAlarm() {
+          if (!this.alarmEnabled) return;
+          try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioCtx.currentTime;
+
+            if (this.alarmType === 'levelup') {
+              const osc = audioCtx.createOscillator();
+              const gain = audioCtx.createGain();
+              osc.connect(gain); gain.connect(audioCtx.destination);
+              osc.type = 'square';
+              osc.frequency.setValueAtTime(600, now);
+              osc.frequency.exponentialRampToValueAtTime(800, now + 0.4);
+              gain.gain.setValueAtTime(0.1, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+              osc.start(now); osc.stop(now + 0.6);
+            }
+            else if (this.alarmType === 'beep') {
+              for (let i = 0; i < 2; i++) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(900, now + (i * 0.2));
+                gain.gain.setValueAtTime(0.1, now + (i * 0.2));
+                gain.gain.setTargetAtTime(0, now + (i * 0.2) + 0.05, 0.02);
+                osc.start(now + (i * 0.2)); osc.stop(now + (i * 0.2) + 0.15);
+              }
+            }
+            else if (this.alarmType === 'chime') {
+              const osc = audioCtx.createOscillator();
+              const gain = audioCtx.createGain();
+              osc.connect(gain); gain.connect(audioCtx.destination);
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(440, now);
+              gain.gain.setValueAtTime(0.2, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+              osc.start(now); osc.stop(now + 1.5);
+            }
+            else {
+              [{ f: 523.25, g: 0.3 }, { f: 1046.50, g: 0.1 }].forEach(({ f, g }) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(f, now);
+                gain.gain.setValueAtTime(g, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+                osc.start(now); osc.stop(now + 1.5);
+              });
+            }
+          } catch (e) { console.error('Audio API unsupported', e); }
+        },
+      }));
+    });
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</body>
+
+</html>

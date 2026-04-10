@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow Pro — Dashboard</title>
+  <meta name="description" content="TaskFlow Pro dashboard. Manage your tasks, track progress, and stay focused." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2/dist/jspdf.umd.min.js"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #F5F3FF;
+      --surface: #FFFFFF;
+      --surface2: #F8FAFC;
+      --text: #0F172A;
+      --muted: #64748B;
+      --brand: #8B5CF6;
+      --brand-hover: #7C3AED;
+      --danger: #EF4444;
+      --danger-bg: #FEF2F2;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --border-color: #0F172A;
+      --shadow-color: #0F172A;
+      --radius: 16px;
+      --border-w: 3px;
+      --sidebar-w: 240px;
+    }
+
+    body.dark {
+      --bg: #0F111A;
+      --surface: #1B1E28;
+      --surface2: #242838;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --border-color: #334155;
+      --shadow-color: #000000;
+      --danger-bg: #450A0A;
+    }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* Abstract Gamified Background */
+    .bg-pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: radial-gradient(var(--border-color) 1.5px, transparent 1.5px);
+      background-size: 32px 32px;
+      opacity: 0.08;
+      z-index: 0;
+      pointer-events: none;
+      animation: panBg 40s linear infinite;
+    }
+
+    body.dark .bg-pattern {
+      opacity: 0.2;
+    }
+
+    @keyframes panBg {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: 100% 100%;
+      }
+    }
+
+    /* ---------- Navbar ---------- */
+    .navbar {
+      height: 70px;
+      background: var(--surface);
+      border-bottom: var(--border-w) solid var(--border-color);
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 0 var(--shadow-color);
+    }
+
+    .nav-logo {
+      font-weight: 900;
+      font-size: 1.4rem;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .logo-mask {
+      display: inline-block;
+      mask-image: url('img/logo.png');
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      -webkit-mask-image: url('img/logo.png');
+      -webkit-mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+    }
+
+    .nav-logo .logo-mask {
+      width: 36px; height: 36px;
+      background-color: var(--brand);
+    }
+
+    .nav-spacer {
+      flex: 1;
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      font-size: .9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: var(--border-w) solid var(--border-color);
+      background: var(--brand);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      flex-shrink: 0;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    .btn-icon-nav {
+      background: var(--bg);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 10px;
+      padding: .4rem .8rem;
+      cursor: pointer;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--text);
+      font-family: inherit;
+      transition: transform 0.1s, box-shadow 0.1s;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+      text-transform: uppercase;
+    }
+
+    .btn-icon-nav:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    /* ---------- Layout ---------- */
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: var(--border-w) solid var(--border-color);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      z-index: 10;
+      transition: width 0.2s ease, padding 0.2s ease;
+      overflow-x: hidden;
+      white-space: nowrap;
+    }
+
+    .sidebar.collapsed {
+      width: 80px;
+      padding: 1.5rem 0.5rem;
+    }
+
+    .sidebar.collapsed .sidebar-label-text,
+    .sidebar.collapsed .nav-text {
+      display: none;
+    }
+
+    .sidebar.collapsed .sidebar-label {
+      justify-content: center !important;
+      padding: 0;
+    }
+
+    .sidebar.collapsed .nav-link {
+      justify-content: center;
+      padding: 0.8rem 0;
+      gap: 0;
+    }
+
+    .btn-collapse {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--brand);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+
+    .btn-collapse:hover {
+      color: var(--text);
+    }
+
+    .sidebar.collapsed .btn-collapse {
+      transform: rotate(180deg);
+    }
+
+    .sidebar-label {
+      font-size: .75rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      padding: 0 .5rem;
+      margin: 1rem 0 .5rem;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .6rem 1rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+      transition: all .15s;
+      border: var(--border-w) solid transparent;
+    }
+
+    .nav-link:hover {
+      color: var(--text);
+      border-color: var(--border-color);
+      background: var(--bg);
+      transform: translateX(4px);
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    .nav-link.active {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--border-color);
+      box-shadow: 3px 3px 0 var(--shadow-color);
+    }
+
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ---------- Digest card ---------- */
+    .digest-card {
+      background: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 2rem;
+      color: #fff;
+      box-shadow: 6px 6px 0 var(--shadow-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+
+    .digest-card:hover {
+      transform: scale(1.01);
+    }
+
+    .digest-card::before {
+      content: '';
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .1);
+      top: -80px;
+      right: -80px;
+    }
+
+    .digest-greeting {
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .digest-meta {
+      margin-top: 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+    }
+
+    .digest-stat {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .digest-stat .overdue {
+      color: #FFE4E6;
+      font-weight: 800;
+      background: #E11D48;
+      padding: 0.1rem 0.4rem;
+      border-radius: 6px;
+      border: 2px solid var(--border-color);
+    }
+
+    .digest-msg {
+      font-size: .9rem;
+      opacity: .9;
+      margin-top: .75rem;
+      font-family: monospace;
+      font-style: italic;
+    }
+
+    .dismiss-btn {
+      background: var(--surface);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 10px;
+      padding: .4rem .8rem;
+      color: var(--text);
+      font-weight: 800;
+      cursor: pointer;
+      font-size: .8rem;
+      flex-shrink: 0;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .dismiss-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    /* ---------- Section header ---------- */
+    .section-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      padding: .6rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 800;
+      box-shadow: 3px 3px 0 var(--shadow-color);
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    }
+
+    .btn-primary:hover {
+      background: var(--brand-hover);
+    }
+
+    .btn-primary:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      padding: .6rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 800;
+      box-shadow: 3px 3px 0 var(--shadow-color);
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .btn-ghost:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    /* ---------- Filter bar ---------- */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-bar input,
+    .filter-bar select {
+      padding: .6rem 1rem;
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: var(--surface);
+      color: var(--text);
+      transition: box-shadow 0.15s, transform 0.15s;
+      box-shadow: 2px 2px 0 transparent;
+    }
+
+    .filter-bar input:focus,
+    .filter-bar select:focus {
+      outline: none;
+      box-shadow: 3px 3px 0 var(--brand);
+      transform: translate(-2px, -2px);
+    }
+
+    .filter-bar input {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .btn-ghost {
+      background: var(--bg);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      padding: .6rem 1rem;
+      cursor: pointer;
+      font-size: .95rem;
+      font-weight: 800;
+      font-family: inherit;
+      color: var(--text);
+      box-shadow: 3px 3px 0 var(--shadow-color);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .btn-ghost:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    /* ---------- Task list ---------- */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .task-card {
+      background: var(--surface);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem;
+      cursor: pointer;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .task-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--brand);
+    }
+
+    .task-card.done-card {
+      opacity: 0.6;
+      background: var(--surface2);
+      box-shadow: 2px 2px 0 var(--shadow-color);
+      transform: none;
+      border-color: var(--muted);
+    }
+
+    .task-card.done-card:hover {
+      opacity: 0.8;
+    }
+
+    .task-card.done-card .task-title {
+      text-decoration: line-through;
+      opacity: 0.8;
+    }
+
+    .check-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      border: var(--border-w) solid var(--border-color);
+      background: var(--surface);
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      font-size: 1.2rem;
+      font-weight: 900;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    .check-btn.checked {
+      background: var(--success);
+      color: #fff;
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    .check-btn:active {
+      transform: scale(0.9);
+    }
+
+    .task-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .task-meta {
+      margin-top: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: .75rem;
+      font-weight: 800;
+      padding: .2rem .6rem;
+      text-transform: uppercase;
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      border: 2px solid var(--border-color);
+      box-shadow: 1px 1px 0 var(--shadow-color);
+    }
+
+    .badge.status-todo {
+      background: #E0E7FF;
+      color: #3730A3;
+    }
+
+    .badge.status-in_progress {
+      background: #FEF3C7;
+      color: #B45309;
+    }
+
+    .badge.status-done {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+
+    .tag-pill {
+      font-size: .75rem;
+      font-weight: 700;
+      background: var(--brand);
+      color: #fff;
+      padding: .2rem .6rem;
+      border-radius: 8px;
+      border: 2px solid var(--border-color);
+    }
+
+    .task-due {
+      font-size: .85rem;
+      font-weight: 700;
+      color: var(--muted);
+      background: var(--surface2);
+      padding: 0.2rem 0.6rem;
+      border-radius: 8px;
+      border: 2px solid var(--border-color);
+    }
+
+    .task-due.overdue {
+      color: var(--danger);
+      background: var(--danger-bg);
+      border-color: var(--danger);
+    }
+
+    .task-actions {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-shrink: 0;
+    }
+
+    .del-btn {
+      background: var(--surface2);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 1.1rem;
+      font-weight: 900;
+      padding: .3rem .6rem;
+      transition: all 0.1s;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    .del-btn:hover {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .del-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 5rem 2rem;
+      background: var(--surface);
+      border: var(--border-w) dashed var(--border-color);
+      border-radius: var(--radius);
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      color: var(--brand);
+      opacity: 0.8;
+    }
+
+    .empty-state h3 {
+      font-size: 1.5rem;
+      font-weight: 900;
+      margin-bottom: .5rem;
+    }
+
+    .empty-state p {
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    /* ---------- Modal ---------- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal {
+      background: var(--bg);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 12px 12px 0 var(--shadow-color);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem;
+      border-bottom: var(--border-w) solid var(--border-color);
+      background: var(--surface);
+    }
+
+    .modal-header h2 {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .close-btn {
+      background: var(--danger-bg);
+      border: 2px solid var(--border-color);
+      font-weight: 900;
+      border-radius: 8px;
+      font-size: 1.2rem;
+      padding: 0.2rem 0.7rem;
+      cursor: pointer;
+      color: var(--danger);
+      box-shadow: 2px 2px 0 var(--shadow-color);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .close-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .modal-footer {
+      padding: 1.5rem;
+      border-top: var(--border-w) solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      background: var(--surface);
+    }
+
+    .form-label {
+      font-size: .85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--text);
+      margin-bottom: .4rem;
+      display: block;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: .8rem 1rem;
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: .95rem;
+      font-weight: 600;
+      background: var(--surface);
+      color: var(--text);
+      transition: transform .15s, box-shadow .15s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      box-shadow: 4px 4px 0 var(--brand);
+      transform: translate(-2px, -2px);
+    }
+
+    textarea.form-input {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    /* Tags inside modal */
+    .chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-top: .6rem;
+    }
+
+    .chip {
+      background: var(--brand);
+      color: #FFF;
+      border-radius: 8px;
+      border: 2px solid var(--border-color);
+      padding: .2rem .65rem;
+      font-size: .8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    .chip .rm {
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    /* AI suggestions */
+    .ai-section {
+      background: var(--surface2);
+      border: var(--border-w) solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+    }
+
+    .ai-title {
+      font-size: .95rem;
+      font-weight: 900;
+      color: var(--brand);
+      margin-bottom: .75rem;
+      text-transform: uppercase;
+    }
+
+    .ai-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+
+    .ai-chip {
+      background: var(--surface);
+      color: var(--brand);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: .4rem .8rem;
+      font-weight: 800;
+      font-size: .8rem;
+      cursor: pointer;
+      transition: transform .1s, box-shadow .1s;
+      box-shadow: 2px 2px 0 var(--shadow-color);
+    }
+
+    .ai-chip:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0 var(--shadow-color);
+    }
+
+    .ai-spin {
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--brand);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    /* Subtasks list */
+    .subtask-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .6rem;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--surface);
+      margin-bottom: 0.5rem;
+    }
+
+    .subtask-row input[type=checkbox] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--brand);
+      cursor: pointer;
+    }
+
+    .subtask-row span {
+      flex: 1;
+      font-size: .95rem;
+      font-weight: 600;
+    }
+
+    .subtask-row .rm-sub {
+      background: var(--danger-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--danger);
+      font-size: 1rem;
+      font-weight: 900;
+      padding: 0.1rem 0.5rem;
+    }
+
+    /* Fix transitions */
+    [x-cloak] {
+      display: none !important;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+
+      .main {
+        padding: 1.25rem;
+      }
+    }
+  </style>
+</head>
+
+<body x-data="dashboard()" x-init="init()" :class="{ dark: darkMode }">
+
+  <!-- Gamified Background Pattern -->
+  <div class="bg-pattern"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a class="nav-logo" href="dashboard.html"> <div class="logo-mask"></div> TaskFlow Pro</a>
+    <div class="nav-spacer"></div>
+    <div class="nav-user" x-data="{ settingsOpen: false }">
+      <template x-if="user?.avatar_url">
+        <img :src="user.avatar_url" class="avatar" style="object-fit: cover;" alt="Profile" />
+      </template>
+      <template x-if="!user?.avatar_url">
+        <div class="avatar" x-text="user?.name?.[0]?.toUpperCase() || '?'"></div>
+      </template>
+      <span x-text="user?.name || ''" style="display:none; @media(min-width:600px){display:block;}"></span>
+
+      <div style="position: relative; display: flex; align-items: center;">
+        <button class="btn-icon-nav" @click="settingsOpen = !settingsOpen" title="Settings"
+          style="display: flex; align-items: center; justify-content: center; padding: 0.4rem; cursor: pointer;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
+        </button>
+
+        <div x-show="settingsOpen" @click.away="settingsOpen = false" x-transition.opacity.duration.200ms
+          style="display: none; position: absolute; right: 0; top: calc(100% + 0.5rem); background: var(--surface); border: var(--border-w) solid var(--border-color); border-radius: 12px; padding: 0.5rem; min-width: 170px; box-shadow: 4px 4px 0 var(--shadow-color); z-index: 9999; flex-direction: column; gap: 0.25rem;">
+
+          <button @click="toggleDark(); settingsOpen = false"
+            style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: flex-start; padding: 0.5rem 0.75rem; color: var(--text); font-family: inherit; font-weight: 800; font-size: 0.85rem; text-transform: uppercase;">
+            <svg x-show="!darkMode" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <svg x-show="darkMode" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <span x-text="darkMode ? 'Light Theme' : 'Dark Theme'"
+              style="line-height: 1; transform: translateY(1px);"></span>
+          </button>
+
+          <div style="height: 3px; background: var(--border-color); margin: 0.25rem 0; width: 100%;"></div>
+
+          <button @click="$dispatch('open-logout-modal')"
+            style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: flex-start; color: var(--danger); padding: 0.5rem 0.75rem; font-family: inherit; font-weight: 800; font-size: 0.85rem; text-transform: uppercase;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span style="line-height: 1; transform: translateY(1px);">Exit App</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Body -->
+  <div class="app-body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" x-data="{ sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false' }"
+      :class="sidebarOpen ? '' : 'collapsed'">
+      <div class="sidebar-label" style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="sidebar-label-text">Navigation</span>
+        <button class="btn-collapse"
+          @click="sidebarOpen = !sidebarOpen; localStorage.setItem('sidebarOpen', sidebarOpen)" title="Toggle Sidebar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+      </div>
+      <a class="nav-link active" href="dashboard.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span class="nav-text">Dashboard</span>
+      </a>
+      <a class="nav-link" href="calendar.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span class="nav-text">Calendar</span>
+      </a>
+      <a class="nav-link" href="focus.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span class="nav-text">Focus Timer</span>
+      </a>
+      <a class="nav-link" href="analytics.html">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        <span class="nav-text">Analytics</span>
+      </a>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+
+      <!-- Smart Daily Digest -->
+      <div class="digest-card" x-show="digest" x-cloak x-transition>
+        <div style="position: relative; z-index: 1;">
+          <div class="digest-greeting" x-text="digestGreeting"></div>
+          <div class="digest-meta">
+            <div class="digest-stat">✅ Completed today: <span x-text="`${digest?.completed_today ?? 0} task(s)`"></span>
+            </div>
+            <div class="digest-stat">
+              🚨 Overdue:
+              <span :class="{ overdue: digest?.overdue_count > 0 }" x-text="digest?.overdue_count ?? 0"></span>
+            </div>
+            <div class="digest-stat">🔥 Streak: <span x-text="`${digest?.streak ?? 0} days`"></span></div>
+            <div class="digest-msg" x-text="motivationalMsg"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section header -->
+      <div class="section-row">
+        <h1 class="section-title">My Quests</h1>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn-ghost" id="btn-export-pdf" @click="exportPDF()">Export PDF</button>
+          <button class="btn-primary" id="btn-add-task" @click="openModal()">+ New Quest</button>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <input id="search-input" type="text" placeholder="Search quests..." x-model="search"
+          @input.debounce.400="loadTasks()" />
+        <select id="filter-status" x-model="filterStatus" @change="loadTasks()">
+          <option value="">All Status</option>
+          <option value="todo">To Do</option>
+          <option value="in_progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+        <select id="filter-priority" x-model="filterPriority" @change="loadTasks()">
+          <option value="">All Priority</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+        <button class="btn-ghost" id="btn-clear-filters" @click="clearFilters()">Clear</button>
+      </div>
+
+      <!-- Task list -->
+      <div class="task-list" id="task-list-container">
+        <template x-if="taskList.length === 0 && !loading">
+          <div class="empty-state">
+            <div class="empty-icon">🎮</div>
+            <h3>Your Quest Log is empty!</h3>
+            <p>Click "New Quest" to spawn your first objective.</p>
+          </div>
+        </template>
+        <template x-for="task in taskList" :key="task.id">
+          <div class="task-card" :class="{ 'done-card': task.status === 'done' }" @click.stop="openModal(task)">
+            <!-- Checkmark -->
+            <button class="check-btn" :class="{ checked: task.status === 'done' }" @click.stop="toggleComplete(task)"
+              :title="task.status === 'done' ? 'Mark incomplete' : 'Mark complete'">
+              <span x-show="task.status === 'done'">✓</span>
+            </button>
+            <!-- Body -->
+            <div class="task-body">
+              <div class="task-title" x-text="task.title"></div>
+              <div class="task-meta">
+                <span class="badge" :class="`status-${task.status}`" x-text="task.status.replace('_', ' ')"></span>
+                <span class="badge" x-text="task.priority"></span>
+                <template x-for="tag in (task.tags || [])" :key="tag">
+                  <span class="tag-pill" x-text="'#' + tag"></span>
+                </template>
+                <span class="task-due" :class="{ overdue: isOverdue(task) }" x-show="task.due_date"
+                  x-text="'⏳ ' + fmtDate(task.due_date)"></span>
+                <span class="task-due" x-show="task.subtasks?.length"
+                  x-text="`📜 ${task.subtasks.filter(s=>s.done).length}/${task.subtasks.length} done`"></span>
+                <span class="task-due" x-show="task.pomodoro_count" x-text="`🍅 x${task.pomodoro_count}`"></span>
+              </div>
+            </div>
+            <!-- Actions -->
+            <div class="task-actions" @click.stop>
+              <button class="del-btn" :id="`del-${task.id}`" @click="deleteTask(task)" title="Delete">✕</button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </main>
+  </div>
+
+  <!-- Task Modal -->
+  <div class="modal-overlay" x-show="modalOpen" x-cloak x-transition @click.self="closeModal()">
+    <div class="modal" @click.stop>
+      <div class="modal-header">
+        <h2 x-text="editingTask ? 'Edit Quest' : 'Spawn New Quest'"></h2>
+        <button class="close-btn" @click="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- Title -->
+        <div>
+          <label class="form-label">Quest Title *</label>
+          <input id="modal-title" class="form-input" type="text" x-model="form.title" placeholder="Defeat the dragon..."
+            @blur="fetchSuggestions()" />
+        </div>
+        <!-- Description -->
+        <div>
+          <label class="form-label">Lore (Description)</label>
+          <textarea id="modal-desc" class="form-input" x-model="form.description" placeholder="Add some backstory…"
+            rows="3"></textarea>
+        </div>
+        <!-- Priority & Status -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+          <div>
+            <label class="form-label">Difficulty (Priority)</label>
+            <select id="modal-priority" class="form-input" x-model="form.priority">
+              <option value="low">Low (Easy)</option>
+              <option value="medium">Medium (Normal)</option>
+              <option value="high">High (Hard)</option>
+              <option value="critical">Critical (Boss Fight)</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Status</label>
+            <select id="modal-status" class="form-input" x-model="form.status">
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+        </div>
+        <!-- Tags -->
+        <div>
+          <label class="form-label">Classes (Tags - press Enter to add)</label>
+          <input id="modal-tags" class="form-input" type="text" x-model="tagInput" placeholder="e.g. work, urgent"
+            @keydown.enter.prevent="addTag()" />
+          <div class="chips-row">
+            <template x-for="(tag, i) in form.tags" :key="i">
+              <span class="chip" @click="removeTag(i)"><span x-text="tag"></span><span class="rm">✕</span></span>
+            </template>
+          </div>
+        </div>
+        <!-- Due date natural language -->
+        <div>
+          <label class="form-label">Time Limit (Due Date)</label>
+          <input id="modal-due-nlp" class="form-input" type="text" x-model="dueDateInput"
+            placeholder='e.g. "tomorrow", "next friday", "in 3 days"' @input="parseDueDate()" />
+          <p x-show="parsedDateLabel" style="font-size:.85rem; font-weight:700; color:var(--brand);margin-top:.4rem"
+            x-text="'Target acquired: ' + parsedDateLabel"></p>
+        </div>
+
+        <!-- Repeat -->
+        <div>
+          <label style="display:flex;align-items:center;gap:.75rem;cursor:pointer">
+            <input type="checkbox" id="modal-repeat-toggle" x-model="form.repeatEnabled"
+              style="width:20px;height:20px;accent-color:var(--brand)" />
+            <span class="form-label" style="margin:0">Respawn (Repeat task)</span>
+          </label>
+          <div x-show="form.repeatEnabled" style="margin-top:.75rem;display:flex;flex-direction:column;gap:.5rem">
+            <select id="modal-repeat" class="form-input" x-model="form.repeat">
+              <option value="daily">Every day</option>
+              <option value="weekdays">Every weekday</option>
+              <option value="weekly">Every week</option>
+              <option value="custom">Custom days</option>
+            </select>
+            <div x-show="form.repeat === 'custom'" style="display:flex;flex-wrap:wrap;gap:.6rem; margin-top: 0.5rem">
+              <template x-for="d in ['mon','tue','wed','thu','fri','sat','sun']" :key="d">
+                <label
+                  style="cursor:pointer;display:flex;align-items:center;gap:.35rem;font-size:.9rem; font-weight:700">
+                  <input type="checkbox" :value="d" x-model="form.repeat_days"
+                    style="width:16px;height:16px;accent-color:var(--brand)" />
+                  <span x-text="d[0].toUpperCase()+d.slice(1)"></span>
+                </label>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Suggestions -->
+        <div class="ai-section" x-show="aiChips.length > 0 || aiLoading">
+          <div class="ai-title">🧠 AI Co-Pilot Suggestions</div>
+          <div x-show="aiLoading" class="ai-spin">Analyzing objective…</div>
+          <div class="ai-chips">
+            <template x-for="(chip, i) in aiChips" :key="i">
+              <span class="ai-chip" @click="addAiChip(i)" x-text="chip"></span>
+            </template>
+          </div>
+        </div>
+
+        <!-- Subtasks -->
+        <div>
+          <label class="form-label">Side Quests (Subtasks)</label>
+          <div>
+            <template x-for="(sub, i) in form.subtasks" :key="i">
+              <div class="subtask-row">
+                <input type="checkbox" x-model="form.subtasks[i].done" />
+                <span x-text="sub.text"></span>
+                <button class="rm-sub" @click="removeSub(i)">✕</button>
+              </div>
+            </template>
+          </div>
+          <div style="display:flex;gap:1rem;margin-top:.5rem">
+            <input id="modal-new-sub" class="form-input" type="text" x-model="newSubtask" placeholder="New objective…"
+              @keydown.enter.prevent="addSub()" style="flex:1" />
+            <button class="btn-ghost" @click="addSub()" style="flex-shrink:0">Add</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" style="padding: 0.6rem 1.25rem" @click="closeModal()">Cancel</button>
+        <button id="modal-save" class="btn-primary" @click="saveTask()" :disabled="saving">
+          <span x-text="saving ? 'Saving…' : 'Lock In'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout Confirmation Modal -->
+  <div class="modal-overlay" style="z-index: 10000;" x-data="{ logoutOpen: false }" @open-logout-modal.window="logoutOpen = true" x-show="logoutOpen" x-cloak>
+    <div class="modal" @click.away="logoutOpen = false" style="max-width: 400px; text-align: center; padding: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 900; color: var(--danger); margin-bottom: 0.5rem;">Abandon Quest?</h2>
+      <p style="font-size: 1rem; font-weight: 700; color: var(--muted); margin-bottom: 1.5rem;">
+        "Winners never quit, and quitters never win."
+      </p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button class="btn-ghost" @click="logoutOpen = false" style="flex: 1;">No, Stay</button>
+        <button class="btn-primary" @click="logout()" style="flex: 1; background: var(--danger); border-color: var(--danger);">Yes, Exit</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1/Sortable.min.js"></script>
+  <script type="module">
+    import { auth, tasks, showToast } from './js/api.js';
+    import { initDueNotifications, exportToPDF } from './js/tasks.js';
+
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('dashboard', () => ({
+        user: null, taskList: [], loading: false, darkMode: false,
+        search: '', filterStatus: '', filterPriority: '',
+        modalOpen: false, editingTask: null, saving: false,
+        digest: null, digestDismissed: false,
+
+        // Form state
+        form: { title: '', description: '', priority: 'medium', status: 'todo', tags: [], due_date: null, assigned_to: '', repeat: 'daily', repeat_days: [], repeatEnabled: false, subtasks: [] },
+        tagInput: '', newSubtask: '',
+        dueDateInput: '', parsedDateLabel: '',
+
+        // AI
+        aiChips: [], aiLoading: false,
+
+        async init() {
+          this.darkMode = localStorage.getItem('theme') === 'dark';
+          const res = await auth.me();
+          if (!res?.ok) { window.location.href = 'index.html'; return; }
+          this.user = res.data;
+          await this.loadTasks();
+          await this.loadDigest();
+          this.$nextTick(() => {
+            Sortable.create(document.getElementById('task-list-container'), { animation: 150, ghostClass: 'sortable-ghost' });
+          });
+        },
+
+        toggleDark() { this.darkMode = !this.darkMode; localStorage.setItem('theme', this.darkMode ? 'dark' : 'light'); },
+
+        async logout() {
+          await auth.logout();
+          window.location.href = 'index.html';
+        },
+
+        async loadTasks() {
+          this.loading = true;
+          const filters = {};
+          if (this.search) filters.search = this.search;
+          if (this.filterStatus) filters.status = this.filterStatus;
+          if (this.filterPriority) filters.priority = this.filterPriority;
+          const res = await tasks.list(filters);
+          if (res?.ok) {
+            this.taskList = res.data;
+            initDueNotifications(this.taskList);
+          }
+          this.loading = false;
+        },
+
+        async loadDigest() {
+          const res = await tasks.analytics();
+          if (res?.ok) this.digest = res.data;
+        },
+
+        clearFilters() { this.search = ''; this.filterStatus = ''; this.filterPriority = ''; this.loadTasks(); },
+
+        exportPDF() { exportToPDF(this.taskList, this.user?.name || ''); },
+
+        get digestGreeting() {
+          const h = new Date().getHours();
+          const t = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
+          return `Good ${t}, ${this.user?.name?.split(' ')[0] || 'Player'}!`;
+        },
+
+        get motivationalMsg() {
+          const r = this.digest?.completion_rate ?? 0;
+          if (r >= 80) return "You're crushing it! Keep your streak alive.";
+          if (r >= 50) return "Good progress — stay locked in.";
+          return "Every quest completed is a win. Start small.";
+        },
+
+        openModal(task = null) {
+          this.editingTask = task;
+          this.aiChips = []; this.aiLoading = false; this.tagInput = ''; this.newSubtask = '';
+          this.dueDateInput = ''; this.parsedDateLabel = '';
+          if (task) {
+            this.form = {
+              title: task.title || '',
+              description: task.description || '',
+              priority: task.priority || 'medium',
+              status: task.status || 'todo',
+              tags: [...(task.tags || [])],
+              due_date: task.due_date || null,
+              assigned_to: task.assigned_to || '',
+              repeat: task.repeat || 'daily',
+              repeat_days: [...(task.repeat_days || [])],
+              repeatEnabled: task.repeat && task.repeat !== 'none',
+              subtasks: (task.subtasks || []).map(s => ({ ...s })),
+            };
+            if (task.due_date) {
+              const d = new Date(task.due_date);
+              this.parsedDateLabel = d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+              this.dueDateInput = this.parsedDateLabel;
+            }
+          } else {
+            this.form = { title: '', description: '', priority: 'medium', status: 'todo', tags: [], due_date: null, assigned_to: '', repeat: 'daily', repeat_days: [], repeatEnabled: false, subtasks: [] };
+          }
+          this.modalOpen = true;
+        },
+
+        closeModal() { this.modalOpen = false; this.editingTask = null; },
+
+        addTag() {
+          const v = this.tagInput.trim();
+          if (v && !this.form.tags.includes(v)) this.form.tags.push(v);
+          this.tagInput = '';
+        },
+        removeTag(i) { this.form.tags.splice(i, 1); },
+        addSub() { const v = this.newSubtask.trim(); if (v) { this.form.subtasks.push({ text: v, done: false }); this.newSubtask = ''; } },
+        removeSub(i) { this.form.subtasks.splice(i, 1); },
+
+        parseDueDate() {
+          const d = parseNaturalDate(this.dueDateInput);
+          if (d) {
+            this.form.due_date = d.toISOString();
+            this.parsedDateLabel = d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          } else {
+            this.parsedDateLabel = '';
+          }
+        },
+
+        async fetchSuggestions() {
+          if (this.form.title.length < 5) return;
+          this.aiLoading = true; this.aiChips = [];
+          const res = await tasks.suggest(this.form.title);
+          this.aiLoading = false;
+          if (res?.data?.subtasks) this.aiChips = res.data.subtasks;
+        },
+
+        addAiChip(i) {
+          const chip = this.aiChips[i];
+          this.form.subtasks.push({ text: chip, done: false });
+          this.aiChips.splice(i, 1);
+        },
+
+        async saveTask() {
+          if (!this.form.title.trim()) { showToast('Title is required', 'error'); return; }
+          this.saving = true;
+          const payload = {
+            title: this.form.title,
+            description: this.form.description,
+            priority: this.form.priority,
+            status: this.form.status,
+            tags: this.form.tags,
+            due_date: this.form.due_date,
+            repeat: this.form.repeatEnabled ? this.form.repeat : 'none',
+            repeat_days: this.form.repeat_days,
+            subtasks: this.form.subtasks,
+          };
+          if (this.form.assigned_to) payload.assigned_to = this.form.assigned_to;
+
+          const res = this.editingTask
+            ? await tasks.update(this.editingTask.id, payload)
+            : await tasks.create(payload);
+
+          this.saving = false;
+          if (res?.ok) {
+            showToast(this.editingTask ? 'Quest updated!' : 'Quest created!', 'success');
+            this.closeModal(); await this.loadTasks();
+          } else {
+            showToast(res?.data?.error || 'Could not save task', 'error');
+          }
+        },
+
+        async toggleComplete(task) {
+          const res = await tasks.toggleComplete(task.id);
+          if (res?.ok) { Object.assign(task, res.data); showToast('Quest status updated', 'success'); }
+        },
+
+        async deleteTask(task) {
+          if (!confirm(`Abandon quest "${task.title}"?`)) return;
+          const res = await tasks.delete(task.id);
+          if (res?.ok) { this.taskList = this.taskList.filter(t => t.id !== task.id); showToast('Quest abandoned', 'error'); }
+        },
+
+        isOverdue(task) { return task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done'; },
+        fmtDate(iso) { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); },
+      }));
+    });
+
+    // ---------- Helpers ----------
+    function parseNaturalDate(input) {
+      const s = input.toLowerCase().trim();
+      if (!s) return null;
+      const now = new Date(); now.setHours(9, 0, 0, 0);
+      if (s === 'today') return now;
+      if (s === 'tomorrow') { const d = new Date(now); d.setDate(d.getDate() + 1); return d; }
+      if (s === 'next week') { const d = new Date(now); d.setDate(d.getDate() + 7); return d; }
+      const inDays = s.match(/^in\s+(\d+)\s+days?$/);
+      if (inDays) { const d = new Date(now); d.setDate(d.getDate() + parseInt(inDays[1])); return d; }
+      const inWeeks = s.match(/^in\s+(\d+)\s+weeks?$/);
+      if (inWeeks) { const d = new Date(now); d.setDate(d.getDate() + parseInt(inWeeks[1]) * 7); return d; }
+      const nextDay = s.match(/^next\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/);
+      if (nextDay) {
+        const days = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 0 };
+        const target = days[nextDay[1]]; const d = new Date(now); let diff = (target - d.getDay() + 7) % 7 || 7;
+        d.setDate(d.getDate() + diff); return d;
+      }
+      // Try native date parse as fallback
+      const parsed = new Date(input);
+      return isNaN(parsed) ? null : parsed;
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</body>
+
+</html>

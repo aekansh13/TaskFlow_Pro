@@ -1,0 +1,48 @@
+services:
+  # 1. Main Flask API
+  - type: web
+    name: taskflow-api
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: gunicorn --worker-class eventlet -w 1 --chdir backend run:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: MONGO_URI
+        fromConfigVar: MONGO_URI
+      - key: REDIS_URL
+        fromConfigVar: REDIS_URL
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+  # 2. Celery Worker
+  - type: worker
+    name: taskflow-worker
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && celery -A celery_app.celery worker --loglevel=info
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: MONGO_URI
+        fromConfigVar: MONGO_URI
+      - key: REDIS_URL
+        fromConfigVar: REDIS_URL
+
+  # 3. Celery Beat (Scheduler)
+  - type: worker
+    name: taskflow-beat
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && celery -A celery_app.celery beat --loglevel=info
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: MONGO_URI
+        fromConfigVar: MONGO_URI
+      - key: REDIS_URL
+        fromConfigVar: REDIS_URL
