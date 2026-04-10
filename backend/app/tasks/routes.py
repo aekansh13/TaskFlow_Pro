@@ -331,16 +331,13 @@ def suggest_subtasks():
     }
 
     try:
-        from openai import OpenAI, DefaultHttpxClient
+        import requests
         import os
-        
-        # Configure for OpenRouter
-        # We explicitly set proxies=None to fix the 'unexpected keyword argument proxies' error on cloud servers.
-        client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY"),
-            http_client=DefaultHttpxClient(proxies=None)
-        )
+        import json
+
+        api_key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            return jsonify(_FALLBACK)
 
         prompt = (
             f"You are a productivity assistant. A user has a task titled: '{title}'. "
@@ -349,18 +346,29 @@ def suggest_subtasks():
             "Respond ONLY with a valid JSON array of 4 strings. No explanation, no markdown."
         )
 
-        completion = client.chat.completions.create(
-            model='openai/gpt-4o-mini', # Provider-prefixed for OpenRouter
-            messages=[{'role': 'user', 'content': prompt}],
-            max_tokens=300,
-            temperature=0.7,
-            extra_headers={
-                "HTTP-Referer": "https://taskflow-pro.local", # Optional
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://taskflow-pro.up.railway.app",
                 "X-Title": "TaskFlow Pro",
-            }
+            },
+            data=json.dumps({
+                "model": "openai/gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 300,
+                "temperature": 0.7
+            }),
+            timeout=15
         )
 
-        raw = completion.choices[0].message.content.strip()
+        if response.status_code != 200:
+            print(f"OpenRouter Error: {response.text}")
+            return jsonify(_FALLBACK)
+
+        result = response.json()
+        raw = result['choices'][0]['message']['content'].strip()
         # Strip accidental markdown code fences
         if raw.startswith('```'):
             raw = raw.split('```')[1]
