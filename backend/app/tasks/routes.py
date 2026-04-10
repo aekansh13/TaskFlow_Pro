@@ -331,13 +331,15 @@ def suggest_subtasks():
     }
 
     try:
-        from openai import OpenAI
+        from openai import OpenAI, DefaultHttpxClient
         import os
         
         # Configure for OpenRouter
+        # We explicitly set proxies=None to fix the 'unexpected keyword argument proxies' error on cloud servers.
         client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY"),
+            http_client=DefaultHttpxClient(proxies=None)
         )
 
         prompt = (
