@@ -774,7 +774,7 @@
 
   <!-- Quick-add modal -->
   <div class="modal-overlay" x-show="qaOpen" x-cloak x-transition @click.self="qaOpen=false">
-    <div class="modal">
+    <div class="modal" @click.stop>
       <div class="modal-header">
         <h2>Schedule Quest</h2>
         <button class="close-btn" @click="qaOpen=false">✕</button>
@@ -871,7 +871,10 @@
             },
             async eventDrop(info) {
               const id = info.event.id;
-              const newDate = info.event.startStr;
+              let newDate = info.event.startStr;
+              if (newDate && newDate.length === 10) {
+                 newDate = new Date(newDate + 'T00:00:00').toISOString();
+              }
               const res = await tasks.update(id, { due_date: newDate });
               if (res?.ok) { showToast('Due date updated', 'success'); }
               else { showToast('Update failed', 'error'); info.revert(); }
@@ -894,12 +897,19 @@
 
         async quickAddTask() {
           if (!this.qa.title.trim()) { showToast('Title required', 'error'); return; }
-          const res = await tasks.create({ title: this.qa.title, priority: this.qa.priority, due_date: this.qa.date });
+          let formattedDate = this.qa.date;
+          if (formattedDate && formattedDate.length === 10) {
+              formattedDate = new Date(formattedDate + 'T00:00:00').toISOString();
+          }
+          const res = await tasks.create({ title: this.qa.title, priority: this.qa.priority, due_date: formattedDate });
           if (res?.ok) {
             showToast('Quest Scheduled!', 'success');
             this.calInstance.addEvent({ id: res.data.id, title: res.data.title, start: res.data.due_date, backgroundColor: '#8B5CF6', borderColor: '#0F172A' });
             this.qaOpen = false;
-          } else { showToast('Could not schedule quest', 'error'); }
+          } else { 
+            const errorMsg = res?.data?.errors ? JSON.stringify(res.data.errors) : (res?.data?.error || 'Could not schedule quest');
+            showToast(errorMsg, 'error'); 
+          }
         },
       }));
     });
