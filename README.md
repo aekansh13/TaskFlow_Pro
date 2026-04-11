@@ -9,7 +9,7 @@
 - Full task CRUD with filtering, search, priorities, and tags
 - Repeating tasks (daily, weekdays, weekly, custom days)
 - Pomodoro focus timer with session logging
-- AI-powered subtask suggestions (OpenAI GPT-4o-mini)
+- AI-powered subtask suggestions (OpenRouter / GPT-4o-mini)
 - Analytics dashboard (completion rate, streak, charts)
 - Calendar view with drag-and-drop rescheduling
 - PDF export of task list
@@ -24,36 +24,82 @@
 | Database   | MongoDB (via MongoEngine)                      |
 | Auth       | JWT in httpOnly cookies, Google OAuth (Authlib)|
 | Jobs       | Celery + Redis                                 |
-| AI         | OpenAI Python SDK (gpt-4o-mini)               |
+| AI         | OpenRouter API (gpt-4o-mini)                  |
+| Infrastructure| Railway (Unified Hosting)                    |
 | Frontend   | HTML5, CSS3, Vanilla JS, Alpine.js             |
-| Charts     | Chart.js 4.x                                  |
-| Calendar   | FullCalendar 6.x                               |
-| Drag/Drop  | SortableJS 1.x                                 |
-| Toasts     | Toastify-js 1.x                               |
-| PDF        | jsPDF 2.x                                     |
 
 ## Prerequisites
 
 - Python 3.11+
-- MongoDB (local or Atlas)
-- Redis (local or cloud)
+- MongoDB Atlas Account
+- OpenRouter API Key
+- Railway Account (for deployment)
 
+## Local Setup
 
-## Libraries Used
+### 1. Clone the repository
 
-| Library              | Version | Purpose                          |
-|----------------------|---------|----------------------------------|
-| flask                | 3.0.3   | Web framework                    |
-| flask-jwt-extended   | 4.6.0   | JWT auth with cookie support     |
-| flask-cors           | 4.0.1   | Cross-Origin Resource Sharing    |
-| flask-socketio       | 5.3.6   | WebSocket support                |
-| mongoengine          | 0.28.2  | MongoDB ODM                      |
-| bcrypt               | 4.1.3   | Password hashing                 |
-| celery               | 5.3.6   | Background task queue            |
-| marshmallow          | 3.21.3  | Input validation / serialisation |
-| authlib              | 1.3.1   | Google OAuth 2.0                 |
-| python-dotenv        | 1.0.1   | .env file loading                |
-| gunicorn             | 22.0.0  | WSGI production server           |
-| openai               | 1.30.1  | AI subtask suggestions           |
-| redis                | 5.0.4   | Celery broker client             |
-| eventlet             | 0.36.1  | Async mode for SocketIO          |
+```bash
+git clone <your-repo-url>
+cd taskflow-pro
+```
+
+### 2. Create and activate a virtual environment
+
+```bash
+# Windows:
+python -m venv .venv
+.venv\Scripts\activate
+# macOS/Linux:
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install backend dependencies
+
+```bash
+pip install -r backend/requirements.txt
+```
+
+### 4. Configure environment variables
+
+Create a `.env` file in the root directory (one level above `backend/`):
+
+```bash
+MONGO_URI=mongodb+srv://...
+SECRET_KEY=...
+JWT_SECRET_KEY=...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+OPENROUTER_API_KEY=...
+```
+
+### 5. Start the App
+
+```bash
+python backend/run.py
+```
+
+## Deployment (Railway Unified Stack)
+
+TaskFlow Pro is designed to run as a **Unified Stack** on Railway. This means the frontend and backend are hosted on the same domain, eliminating CORS issues and ensuring secure cookie handling.
+
+1.  **Connect GitHub**: Point Railway to your repository.
+2.  **Environment Variables**: Add all keys from your `.env`.
+3.  **Procfile**: Railway uses the root `Procfile` to start Gunicorn.
+4.  **Database**: Use **MongoDB Atlas** for persistent storage.
+
+## Cloud Troubleshooting Wins
+
+During the cloud migration, several production-only hurdles were cleared:
+- **Unified Origin**: Moved from split Hosting (Vercel/Render) to Unified (Railway) to solve SameSite cookie restrictions and cross-origin auth issues.
+- **Proxy Bypass**: Resolved a `TypeError: proxies` crash in the `openai` SDK on cloud servers by switching to raw `requests` for the OpenRouter API.
+- **Protocol Harmony**: Configured specific Google OAuth Redirect URIs to match the production `https` environment.
+
+## Credits & Libraries
+
+- **Flask**: Web framework
+- **Alpine.js**: Lightweight frontend reactivity
+- **Chart.js**: Analytics visualization
+- **MongoEngine**: Object-Document Mapper
+- **Authlib**: Secure OAuth integration
