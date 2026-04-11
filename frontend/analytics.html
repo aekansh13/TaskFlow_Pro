@@ -1008,11 +1008,10 @@
               datasets: [{
                 label: 'Quests Cleared',
                 data: d.daily_completions.map(dc => dc.count),
-                backgroundColor: '#8B5CF6',
-                borderColor: '#111827',
-                borderWidth: 2,
-                borderRadius: 0,
-                borderSkipped: false
+                backgroundColor: d.daily_completions.map(dc => dc.count === 0 ? 'transparent' : '#8B5CF6'),
+                borderColor: d.daily_completions.map(dc => dc.count === 0 ? 'transparent' : '#111827'),
+                borderWidth: d.daily_completions.map(dc => dc.count === 0 ? 0 : 2),
+                borderRadius: 4,
               }],
             },
             options: {
@@ -1036,9 +1035,9 @@
                 datasets: [{
                   label: 'Uses',
                   data: d.top_tags.map(t => t.count),
-                  backgroundColor: '#8B5CF6',
-                  borderColor: this.darkMode ? '#000' : '#0F172A',
-                  borderWidth: 3,
+                  backgroundColor: d.top_tags.map(t => t.count === 0 ? 'transparent' : '#8B5CF6'),
+                  borderColor: d.top_tags.map(t => t.count === 0 ? 'transparent' : (this.darkMode ? '#000' : '#0F172A')),
+                  borderWidth: d.top_tags.map(t => t.count === 0 ? 0 : 3),
                   hoverBackgroundColor: '#7C3AED',
                   borderRadius: 4
                 }],
